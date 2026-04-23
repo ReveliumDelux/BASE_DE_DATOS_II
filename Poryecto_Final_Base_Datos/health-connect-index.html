@@ -1,0 +1,2020 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Health-Connect | Triaje Digital Hospitalario</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --color-primary: #0066CC;
+            --color-secondary: #004D99;
+            --color-success: #28A745;
+            --color-warning: #FFD700;
+            --color-danger: #FF0000;
+            --color-urgent: #FF8C00;
+            --color-light-urgent: #FFEB3B;
+            --color-info: #6C757D;
+            --color-white: #FFFFFF;
+            --color-light: #F5F6F8;
+            --color-dark: #333333;
+            --color-border: #E0E0E0;
+            --font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            --shadow: 0 2px 8px rgba(0,0,0,0.1);
+            --shadow-lg: 0 4px 16px rgba(0,0,0,0.15);
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--color-light);
+            color: var(--color-dark);
+            overflow-x: hidden;
+        }
+
+        /* ========== LAYOUT ========== */
+        .layout {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            grid-template-rows: 70px 1fr;
+            height: 100vh;
+        }
+
+        .sidebar {
+            grid-row: 1 / 3;
+            background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+            color: white;
+            padding: 20px 0;
+            overflow-y: auto;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .topbar {
+            grid-column: 2;
+            background: var(--color-white);
+            border-bottom: 1px solid var(--color-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 30px;
+            box-shadow: var(--shadow);
+        }
+
+        .main-content {
+            grid-column: 2;
+            overflow-y: auto;
+            background: var(--color-light);
+        }
+
+        /* ========== SIDEBAR ========== */
+        .sidebar-header {
+            padding: 15px 20px;
+            border-bottom: 2px solid rgba(255,255,255,0.2);
+            margin-bottom: 20px;
+            font-size: 18px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .sidebar-logo {
+            font-size: 24px;
+        }
+
+        .nav-menu {
+            list-style: none;
+        }
+
+        .nav-item {
+            padding: 0;
+            margin: 0 15px;
+        }
+
+        .nav-link {
+            color: rgba(255,255,255,0.8);
+            text-decoration: none;
+            padding: 12px 15px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .nav-link:hover {
+            background: rgba(255,255,255,0.15);
+            color: white;
+        }
+
+        .nav-link.active {
+            background: rgba(255,255,255,0.25);
+            color: white;
+            border-left: 3px solid white;
+            padding-left: 12px;
+        }
+
+        .nav-icon {
+            font-size: 18px;
+            width: 20px;
+        }
+
+        /* ========== TOPBAR ========== */
+        .topbar-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .topbar-search {
+            position: relative;
+        }
+
+        .topbar-search input {
+            padding: 8px 40px 8px 12px;
+            border: 1px solid var(--color-border);
+            border-radius: 6px;
+            width: 200px;
+            font-size: 14px;
+        }
+
+        .topbar-search::after {
+            content: "🔍";
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+        }
+
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .user-menu {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+        }
+
+        .avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--color-primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        /* ========== CONTENT ========== */
+        .content {
+            padding: 30px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .page-title {
+            font-size: 28px;
+            font-weight: 600;
+            color: var(--color-dark);
+        }
+
+        /* ========== CARDS & METRICS ========== */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .metric-card {
+            background: var(--color-white);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            border-left: 4px solid var(--color-primary);
+            transition: transform 0.2s ease;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .metric-label {
+            font-size: 12px;
+            color: var(--color-info);
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .metric-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--color-primary);
+            margin: 10px 0;
+        }
+
+        .metric-change {
+            font-size: 12px;
+            color: var(--color-success);
+        }
+
+        /* ========== BUTTONS ========== */
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--color-primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--color-secondary);
+            box-shadow: var(--shadow);
+        }
+
+        .btn-secondary {
+            background: var(--color-light);
+            color: var(--color-dark);
+            border: 1px solid var(--color-border);
+        }
+
+        .btn-secondary:hover {
+            background: white;
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        /* ========== FORMS ========== */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: var(--color-dark);
+        }
+
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--color-border);
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: var(--font-family);
+            transition: border-color 0.3s ease;
+        }
+
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+        }
+
+        .form-textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        /* ========== TABLES ========== */
+        .table-container {
+            background: var(--color-white);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            margin-bottom: 30px;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .table thead {
+            background: var(--color-light);
+            border-bottom: 2px solid var(--color-border);
+        }
+
+        .table th {
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 12px;
+            color: var(--color-dark);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .table td {
+            padding: 15px;
+            border-bottom: 1px solid var(--color-border);
+            font-size: 14px;
+        }
+
+        .table tbody tr:hover {
+            background: var(--color-light);
+        }
+
+        /* ========== BADGES ========== */
+        .badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge-red {
+            background: #FFE5E5;
+            color: #FF0000;
+        }
+
+        .badge-orange {
+            background: #FFE8D1;
+            color: #FF8C00;
+        }
+
+        .badge-yellow {
+            background: #FFF8E1;
+            color: #FFD700;
+        }
+
+        .badge-green {
+            background: #E8F5E9;
+            color: #28A745;
+        }
+
+        .badge-blue {
+            background: #E3F2FD;
+            color: #6C757D;
+        }
+
+        /* ========== MODALS ========== */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal-content {
+            background: var(--color-white);
+            border-radius: 8px;
+            padding: 30px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--color-dark);
+        }
+
+        .modal-footer {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid var(--color-border);
+        }
+
+        /* ========== ALERTS ========== */
+        .alert {
+            padding: 15px 20px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+        }
+
+        .alert-danger {
+            background: #FFE5E5;
+            color: #C00;
+            border-left: 4px solid var(--color-danger);
+        }
+
+        .alert-warning {
+            background: #FFF8E1;
+            color: #FF8C00;
+            border-left: 4px solid var(--color-urgent);
+        }
+
+        .alert-success {
+            background: #E8F5E9;
+            color: #28A745;
+            border-left: 4px solid var(--color-success);
+        }
+
+        /* ========== PRIORITY BOX ========== */
+        .priority-box {
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .priority-box.red {
+            background: #FFE5E5;
+            border: 2px solid #FF0000;
+        }
+
+        .priority-box.orange {
+            background: #FFE8D1;
+            border: 2px solid #FF8C00;
+        }
+
+        .priority-box.yellow {
+            background: #FFF8E1;
+            border: 2px solid #FFD700;
+        }
+
+        .priority-box.green {
+            background: #E8F5E9;
+            border: 2px solid #28A745;
+        }
+
+        .priority-box.blue {
+            background: #E3F2FD;
+            border: 2px solid #6C757D;
+        }
+
+        .priority-label {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+        }
+
+        .priority-value {
+            font-size: 28px;
+            font-weight: 700;
+        }
+
+        /* ========== TIMELINE ========== */
+        .timeline {
+            position: relative;
+            padding-left: 40px;
+        }
+
+        .timeline-item {
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -30px;
+            top: 0;
+            width: 12px;
+            height: 12px;
+            background: var(--color-primary);
+            border-radius: 50%;
+            border: 3px solid white;
+            box-shadow: 0 0 0 2px var(--color-primary);
+        }
+
+        .timeline-time {
+            font-size: 12px;
+            color: var(--color-info);
+            font-weight: 600;
+        }
+
+        .timeline-content {
+            font-size: 14px;
+            margin-top: 5px;
+            color: var(--color-dark);
+        }
+
+        /* ========== TABS ========== */
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid var(--color-border);
+            gap: 0;
+            margin-bottom: 20px;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            padding: 15px 20px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--color-info);
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .tab-btn:hover {
+            color: var(--color-primary);
+        }
+
+        .tab-btn.active {
+            color: var(--color-primary);
+            border-bottom-color: var(--color-primary);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* ========== GRID LAYOUTS ========== */
+        .row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .col-full {
+            grid-column: 1 / -1;
+        }
+
+        /* ========== LOGIN PAGE ========== */
+        .login-container {
+            display: flex;
+            height: 100vh;
+            background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+        }
+
+        .login-left {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+        }
+
+        .login-logo {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+
+        .login-title {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .login-subtitle {
+            font-size: 16px;
+            opacity: 0.9;
+            text-align: center;
+            max-width: 400px;
+        }
+
+        .login-right {
+            flex: 1;
+            background: var(--color-white);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .login-form {
+            width: 100%;
+            max-width: 400px;
+            padding: 30px;
+        }
+
+        .login-form-title {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 30px;
+            color: var(--color-dark);
+            text-align: center;
+        }
+
+        .remember-forgot {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            margin-bottom: 20px;
+        }
+
+        .remember-forgot a {
+            color: var(--color-primary);
+            text-decoration: none;
+        }
+
+        .remember-forgot a:hover {
+            text-decoration: underline;
+        }
+
+        /* ========== QUEUE VISUALIZATION ========== */
+        .queue-item {
+            background: var(--color-white);
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 4px solid;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .queue-item:hover {
+            box-shadow: var(--shadow);
+        }
+
+        .queue-item.red { border-left-color: #FF0000; }
+        .queue-item.orange { border-left-color: #FF8C00; }
+        .queue-item.yellow { border-left-color: #FFD700; }
+        .queue-item.green { border-left-color: #28A745; }
+        .queue-item.blue { border-left-color: #6C757D; }
+
+        .queue-patient {
+            flex: 1;
+        }
+
+        .queue-patient-name {
+            font-weight: 600;
+            color: var(--color-dark);
+        }
+
+        .queue-patient-info {
+            font-size: 12px;
+            color: var(--color-info);
+            margin-top: 4px;
+        }
+
+        .queue-time {
+            text-align: right;
+            font-size: 12px;
+            color: var(--color-info);
+        }
+
+        /* ========== RESPONSIVE ========== */
+        @media (max-width: 768px) {
+            .layout {
+                grid-template-columns: 1fr;
+                grid-template-rows: 70px 1fr;
+            }
+
+            .sidebar {
+                grid-row: 1;
+                grid-column: 1;
+                position: fixed;
+                left: 0;
+                top: 0;
+                height: 100%;
+                z-index: 999;
+                width: 280px;
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+            }
+
+            .sidebar.active {
+                transform: translateX(0);
+            }
+
+            .topbar {
+                grid-column: 1;
+            }
+
+            .main-content {
+                grid-column: 1;
+            }
+
+            .metrics-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .content {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="layout">
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <span class="sidebar-logo">⚕️</span>
+                <span>Health-Connect</span>
+            </div>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a class="nav-link active" onclick="showPage('dashboard')">
+                        <span class="nav-icon">📊</span> Dashboard
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" onclick="showPage('patients')">
+                        <span class="nav-icon">👥</span> Pacientes
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" onclick="showPage('triage')">
+                        <span class="nav-icon">🏥</span> Triaje
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" onclick="showPage('queue')">
+                        <span class="nav-icon">⏱️</span> Cola Urgencias
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" onclick="showPage('records')">
+                        <span class="nav-icon">📋</span> Expedientes
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" onclick="showPage('reports')">
+                        <span class="nav-icon">📈</span> Reportes
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" onclick="showPage('admin')">
+                        <span class="nav-icon">⚙️</span> Administración
+                    </a>
+                </li>
+            </ul>
+        </aside>
+
+        <!-- TOPBAR -->
+        <header class="topbar">
+            <div class="topbar-left">
+                <div class="topbar-search">
+                    <input type="text" placeholder="Buscar pacientes..." id="searchInput">
+                </div>
+            </div>
+            <div class="topbar-right">
+                <span style="font-size: 20px;">🔔</span>
+                <div class="user-menu" onclick="logout()">
+                    <div class="avatar">JD</div>
+                    <span style="font-size: 14px;">Juan Díaz</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- MAIN CONTENT -->
+        <main class="main-content">
+            <div class="content">
+                <!-- PAGE: DASHBOARD -->
+                <div id="dashboard-page" class="page active">
+                    <div class="page-header">
+                        <h1 class="page-title">Dashboard</h1>
+                        <button class="btn btn-primary" onclick="showPage('triage')">
+                            ➕ Nuevo Paciente
+                        </button>
+                    </div>
+
+                    <div class="alert alert-warning">
+                        ⚠️ 2 pacientes en triaje prioritario esperan validación
+                    </div>
+
+                    <div class="metrics-grid">
+                        <div class="metric-card">
+                            <div class="metric-label">En Cola</div>
+                            <div class="metric-value">14</div>
+                            <div class="metric-change">↑ 2 últimas horas</div>
+                        </div>
+                        <div class="metric-card" style="border-left-color: #FF0000;">
+                            <div class="metric-label">🔴 Inmediato</div>
+                            <div class="metric-value" style="color: #FF0000;">3</div>
+                            <div class="metric-change">Requiere atención urgente</div>
+                        </div>
+                        <div class="metric-card" style="border-left-color: #FF8C00;">
+                            <div class="metric-label">🟠 Muy Urgente</div>
+                            <div class="metric-value" style="color: #FF8C00;">5</div>
+                            <div class="metric-change">Tiempo promedio: 8 min</div>
+                        </div>
+                        <div class="metric-card" style="border-left-color: #28A745;">
+                            <div class="metric-label">Atenciones Hoy</div>
+                            <div class="metric-value" style="color: #28A745;">47</div>
+                            <div class="metric-change">Promedio: 12 min/pac</div>
+                        </div>
+                    </div>
+
+                    <h2 style="font-size: 18px; margin: 30px 0 15px 0; font-weight: 600;">Próximos Pacientes (Cola Priorizada)</h2>
+                    <div class="table-container">
+                        <div id="queue-preview"></div>
+                    </div>
+
+                    <h2 style="font-size: 18px; margin: 30px 0 15px 0; font-weight: 600;">Actividad Reciente</h2>
+                    <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: var(--shadow);">
+                        <div class="timeline">
+                            <div class="timeline-item">
+                                <div class="timeline-time">08:45</div>
+                                <div class="timeline-content"><strong>Paciente registrado:</strong> María García López - Triaje: MUY URGENTE</div>
+                            </div>
+                            <div class="timeline-item">
+                                <div class="timeline-time">08:40</div>
+                                <div class="timeline-content"><strong>Expediente actualizado:</strong> Carlos Ruiz - Derivación a Urgencias</div>
+                            </div>
+                            <div class="timeline-item">
+                                <div class="timeline-time">08:35</div>
+                                <div class="timeline-content"><strong>Triaje completado:</strong> Ana Martín - Prioridad: URGENTE</div>
+                            </div>
+                            <div class="timeline-item">
+                                <div class="timeline-time">08:30</div>
+                                <div class="timeline-content"><strong>Paciente atendido:</strong> Roberto Sánchez - Completado</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PAGE: PATIENTS -->
+                <div id="patients-page" class="page">
+                    <div class="page-header">
+                        <h1 class="page-title">Gestión de Pacientes</h1>
+                        <button class="btn btn-primary" onclick="openModal('newPatientModal')">
+                            ➕ Registrar Nuevo Paciente
+                        </button>
+                    </div>
+
+                    <div class="table-container">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Cédula</th>
+                                    <th>Nombre</th>
+                                    <th>Edad</th>
+                                    <th>Sexo</th>
+                                    <th>Última Consulta</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="patients-table-body">
+                                <!-- Populated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- PAGE: TRIAGE -->
+                <div id="triage-page" class="page">
+                    <div class="page-header">
+                        <h1 class="page-title">Triaje Asistido por IA</h1>
+                    </div>
+
+                    <div class="alert alert-success">
+                        ✓ Sistema de triaje conectado. IA disponible para asistencia.
+                    </div>
+
+                    <div class="tabs">
+                        <button class="tab-btn active" onclick="switchTab(event, 'tab-capture')">Captura</button>
+                        <button class="tab-btn" onclick="switchTab(event, 'tab-ai-suggestion')">Sugerencia IA</button>
+                        <button class="tab-btn" onclick="switchTab(event, 'tab-validation')">Validación</button>
+                    </div>
+
+                    <!-- TAB: CAPTURE -->
+                    <div id="tab-capture" class="tab-content active">
+                        <div style="background: white; padding: 30px; border-radius: 8px; box-shadow: var(--shadow);">
+                            <h3 style="margin-bottom: 20px; color: var(--color-dark);">Búsqueda de Paciente</h3>
+                            <div class="form-group">
+                                <label class="form-label">Cédula o Nombre</label>
+                                <input type="text" class="form-input" placeholder="Ej: 1234567890 o Juan Pérez" id="patientSearch">
+                            </div>
+
+                            <h3 style="margin-top: 30px; margin-bottom: 20px; color: var(--color-dark);">Signos Vitales</h3>
+                            <div class="row">
+                                <div class="form-group">
+                                    <label class="form-label">Tensión Arterial (mmHg)</label>
+                                    <input type="text" class="form-input" placeholder="120/80" id="sbp">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Frecuencia Cardíaca (bpm)</label>
+                                    <input type="number" class="form-input" placeholder="72" id="hr">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Frecuencia Respiratoria (rpm)</label>
+                                    <input type="number" class="form-input" placeholder="16" id="rr">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Saturación O2 (%)</label>
+                                    <input type="number" class="form-input" placeholder="98" id="spo2">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Temperatura (°C)</label>
+                                    <input type="number" class="form-input" placeholder="36.5" id="temp" step="0.1">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Peso (kg)</label>
+                                    <input type="number" class="form-input" placeholder="70" id="weight">
+                                </div>
+                            </div>
+
+                            <h3 style="margin-top: 30px; margin-bottom: 20px; color: var(--color-dark);">Motivo de Consulta</h3>
+                            <div class="form-group">
+                                <label class="form-label">Síntomas y Descripción</label>
+                                <textarea class="form-textarea" placeholder="Describa los síntomas principales..." id="symptoms"></textarea>
+                            </div>
+
+                            <h3 style="margin-top: 30px; margin-bottom: 20px; color: var(--color-dark);">Antecedentes Médicos</h3>
+                            <div class="row">
+                                <div class="form-group">
+                                    <label class="form-label">Alergias</label>
+                                    <input type="text" class="form-input" placeholder="Ej: Penicilina, Ibuprofeno" id="allergies">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Medicamentos Actuales</label>
+                                    <input type="text" class="form-input" placeholder="Ej: Metformina 500mg" id="medications">
+                                </div>
+                            </div>
+
+                            <div style="display: flex; gap: 10px; margin-top: 30px;">
+                                <button class="btn btn-primary" onclick="analyzeWithAI()">
+                                    🤖 Analizar con IA
+                                </button>
+                                <button class="btn btn-secondary">Limpiar</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB: AI SUGGESTION -->
+                    <div id="tab-ai-suggestion" class="tab-content">
+                        <div style="background: white; padding: 30px; border-radius: 8px; box-shadow: var(--shadow);">
+                            <h3 style="margin-bottom: 20px;">Análisis de IA - Recomendación de Triaje</h3>
+                            <div id="ai-result" style="display: none;">
+                                <div class="alert alert-warning">
+                                    ℹ️ Esta es una <strong>sugerencia asistida por IA</strong> para optimizar priorización clínica inicial. 
+                                    No es diagnóstico médico. El personal médico es responsable de la validación final.
+                                </div>
+                                <div id="ai-priority-box"></div>
+                                <h4 style="margin: 20px 0 10px 0;">Criterios Evaluados:</h4>
+                                <ul id="ai-criteria" style="margin-left: 20px; font-size: 14px; line-height: 1.8;">
+                                </ul>
+                                <h4 style="margin: 20px 0 10px 0;">Recomendaciones:</h4>
+                                <div id="ai-recommendations" style="background: var(--color-light); padding: 15px; border-radius: 6px; font-size: 14px; line-height: 1.8;">
+                                </div>
+                                <div style="margin-top: 20px;">
+                                    <button class="btn btn-primary" onclick="switchTab(null, 'tab-validation')">Proceder a Validación →</button>
+                                </div>
+                            </div>
+                            <div id="ai-empty" style="text-align: center; padding: 40px; color: var(--color-info);">
+                                <p>Completa la captura y haz clic en "Analizar con IA" para ver la recomendación</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB: VALIDATION -->
+                    <div id="tab-validation" class="tab-content">
+                        <div style="background: white; padding: 30px; border-radius: 8px; box-shadow: var(--shadow);">
+                            <h3 style="margin-bottom: 20px;">Validación de Triaje por Personal Médico</h3>
+                            <div class="alert alert-success">
+                                ✓ Triaje sugerido: <strong id="validation-suggested"></strong>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">¿Acepta la sugerencia o desea modificar?</label>
+                                <select class="form-select" id="triageSelect">
+                                    <option value="">-- Seleccione prioridad --</option>
+                                    <option value="red">🔴 Inmediato (Rojo)</option>
+                                    <option value="orange">🟠 Muy Urgente (Naranja)</option>
+                                    <option value="yellow">🟡 Urgente (Amarillo)</option>
+                                    <option value="green">🟢 Poco Urgente (Verde)</option>
+                                    <option value="blue">🔵 No Urgente (Azul)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Justificación Médica (Requerida)</label>
+                                <textarea class="form-textarea" placeholder="Explique brevemente la decisión de triaje..." id="triageJustification"></textarea>
+                            </div>
+                            <div style="display: flex; gap: 10px;">
+                                <button class="btn btn-primary" onclick="submitTriage()">✓ Confirmar Triaje</button>
+                                <button class="btn btn-secondary" onclick="switchTab(null, 'tab-capture')">← Volver a Captura</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PAGE: QUEUE -->
+                <div id="queue-page" class="page">
+                    <div class="page-header">
+                        <h1 class="page-title">Cola de Urgencias</h1>
+                    </div>
+
+                    <div class="alert alert-danger">
+                        🔴 3 pacientes en triaje rojo requieren atención inmediata
+                    </div>
+
+                    <h3 style="margin-bottom: 15px; color: var(--color-dark);">Filtrar por Prioridad:</h3>
+                    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                        <button class="btn btn-primary" onclick="filterQueue('all')">Todos</button>
+                        <button class="btn btn-secondary" onclick="filterQueue('red')">🔴 Inmediato</button>
+                        <button class="btn btn-secondary" onclick="filterQueue('orange')">🟠 Muy Urgente</button>
+                        <button class="btn btn-secondary" onclick="filterQueue('yellow')">🟡 Urgente</button>
+                        <button class="btn btn-secondary" onclick="filterQueue('green')">🟢 Poco Urgente</button>
+                        <button class="btn btn-secondary" onclick="filterQueue('blue')">🔵 No Urgente</button>
+                    </div>
+
+                    <div id="queue-list">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- PAGE: RECORDS -->
+                <div id="records-page" class="page">
+                    <div class="page-header">
+                        <h1 class="page-title">Expedientes Clínicos</h1>
+                    </div>
+
+                    <div class="form-group" style="max-width: 400px;">
+                        <label class="form-label">Buscar Paciente</label>
+                        <input type="text" class="form-input" placeholder="Cédula o nombre..." id="recordSearch">
+                    </div>
+
+                    <div id="record-detail" style="display: none;">
+                        <div style="background: white; padding: 30px; border-radius: 8px; box-shadow: var(--shadow);">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--color-border);">
+                                <h2 id="record-patient-name" style="font-size: 22px; font-weight: 600;"></h2>
+                                <button class="btn btn-secondary btn-sm" onclick="closeRecord()">← Volver</button>
+                            </div>
+
+                            <div class="tabs">
+                                <button class="tab-btn active" onclick="switchTab(event, 'record-demographics')">Datos Demográficos</button>
+                                <button class="tab-btn" onclick="switchTab(event, 'record-vitals')">Signos Vitales</button>
+                                <button class="tab-btn" onclick="switchTab(event, 'record-triage')">Triaje</button>
+                                <button class="tab-btn" onclick="switchTab(event, 'record-timeline')">Timeline</button>
+                            </div>
+
+                            <div id="record-demographics" class="tab-content active" style="background: var(--color-light); padding: 15px; border-radius: 6px;">
+                                <div class="row">
+                                    <div><strong>Cédula:</strong> <span id="record-id"></span></div>
+                                    <div><strong>Edad:</strong> <span id="record-age"></span></div>
+                                    <div><strong>Sexo:</strong> <span id="record-sex"></span></div>
+                                    <div><strong>Alergias:</strong> <span id="record-allergies"></span></div>
+                                    <div><strong>Medicamentos:</strong> <span id="record-meds"></span></div>
+                                </div>
+                            </div>
+
+                            <div id="record-vitals" class="tab-content" style="background: var(--color-light); padding: 15px; border-radius: 6px;">
+                                <div class="row">
+                                    <div><strong>TA:</strong> <span id="record-sbp"></span></div>
+                                    <div><strong>FC:</strong> <span id="record-hr"></span> bpm</div>
+                                    <div><strong>FR:</strong> <span id="record-rr"></span> rpm</div>
+                                    <div><strong>SpO2:</strong> <span id="record-spo2"></span>%</div>
+                                    <div><strong>Temp:</strong> <span id="record-temp"></span>°C</div>
+                                </div>
+                            </div>
+
+                            <div id="record-triage" class="tab-content" style="background: var(--color-light); padding: 15px; border-radius: 6px;">
+                                <div><strong>Prioridad:</strong> <span id="record-priority"></span></div>
+                                <div style="margin-top: 10px;"><strong>Justificación:</strong> <span id="record-justification"></span></div>
+                            </div>
+
+                            <div id="record-timeline" class="tab-content">
+                                <div class="timeline" id="record-events"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="record-empty" style="text-align: center; padding: 40px; color: var(--color-info);">
+                        <p>Busca un paciente para ver su expediente clínico</p>
+                    </div>
+                </div>
+
+                <!-- PAGE: REPORTS -->
+                <div id="reports-page" class="page">
+                    <div class="page-header">
+                        <h1 class="page-title">Reportes y Análisis</h1>
+                    </div>
+
+                    <div class="metrics-grid">
+                        <div class="metric-card">
+                            <div class="metric-label">Pacientes Hoy</div>
+                            <div class="metric-value">132</div>
+                            <div class="metric-change">↑ 12% vs ayer</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Tiempo Promedio Espera</div>
+                            <div class="metric-value">12 min</div>
+                            <div class="metric-change">↓ 5% vs promedio</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">% Triajes Red</div>
+                            <div class="metric-value">8%</div>
+                            <div class="metric-change">Normal</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Atenciones Completadas</div>
+                            <div class="metric-value">89</div>
+                            <div class="metric-change">↑ 15 en progreso</div>
+                        </div>
+                    </div>
+
+                    <div style="background: white; padding: 30px; border-radius: 8px; box-shadow: var(--shadow); margin-bottom: 30px;">
+                        <h3 style="margin-bottom: 20px;">Distribución de Triajes Hoy</h3>
+                        <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px;">
+                            <div style="text-align: center; padding: 20px; background: #FFE5E5; border-radius: 6px;">
+                                <div style="font-size: 28px; font-weight: 700; color: #FF0000;">10</div>
+                                <div style="font-size: 12px; color: #666;">Rojo (8%)</div>
+                            </div>
+                            <div style="text-align: center; padding: 20px; background: #FFE8D1; border-radius: 6px;">
+                                <div style="font-size: 28px; font-weight: 700; color: #FF8C00;">20</div>
+                                <div style="font-size: 12px; color: #666;">Naranja (15%)</div>
+                            </div>
+                            <div style="text-align: center; padding: 20px; background: #FFF8E1; border-radius: 6px;">
+                                <div style="font-size: 28px; font-weight: 700; color: #FFD700;">35</div>
+                                <div style="font-size: 12px; color: #666;">Amarillo (26%)</div>
+                            </div>
+                            <div style="text-align: center; padding: 20px; background: #E8F5E9; border-radius: 6px;">
+                                <div style="font-size: 28px; font-weight: 700; color: #28A745;">40</div>
+                                <div style="font-size: 12px; color: #666;">Verde (30%)</div>
+                            </div>
+                            <div style="text-align: center; padding: 20px; background: #E3F2FD; border-radius: 6px;">
+                                <div style="font-size: 28px; font-weight: 700; color: #6C757D;">27</div>
+                                <div style="font-size: 12px; color: #666;">Azul (21%)</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="background: white; padding: 30px; border-radius: 8px; box-shadow: var(--shadow);">
+                        <h3 style="margin-bottom: 20px;">Atenciones por Hora</h3>
+                        <div style="height: 200px; background: var(--color-light); border-radius: 6px; display: flex; align-items: flex-end; padding: 15px; gap: 5px;">
+                            <div style="flex: 1; background: var(--color-primary); border-radius: 4px 4px 0 0; height: 60%;"></div>
+                            <div style="flex: 1; background: var(--color-primary); border-radius: 4px 4px 0 0; height: 75%;"></div>
+                            <div style="flex: 1; background: var(--color-primary); border-radius: 4px 4px 0 0; height: 90%;"></div>
+                            <div style="flex: 1; background: var(--color-primary); border-radius: 4px 4px 0 0; height: 85%;"></div>
+                            <div style="flex: 1; background: var(--color-primary); border-radius: 4px 4px 0 0; height: 70%;"></div>
+                            <div style="flex: 1; background: var(--color-primary); border-radius: 4px 4px 0 0; height: 80%;"></div>
+                            <div style="flex: 1; background: var(--color-primary); border-radius: 4px 4px 0 0; height: 95%;"></div>
+                            <div style="flex: 1; background: var(--color-primary); border-radius: 4px 4px 0 0; height: 88%;"></div>
+                        </div>
+                        <div style="margin-top: 10px; font-size: 12px; color: var(--color-info); text-align: center;">
+                            Hora: 8AM | 9AM | 10AM | 11AM | 12PM | 1PM | 2PM | 3PM
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PAGE: ADMIN -->
+                <div id="admin-page" class="page">
+                    <div class="page-header">
+                        <h1 class="page-title">Administración</h1>
+                    </div>
+
+                    <div class="tabs">
+                        <button class="tab-btn active" onclick="switchTab(event, 'users-tab')">Usuarios</button>
+                        <button class="tab-btn" onclick="switchTab(event, 'roles-tab')">Roles y Permisos</button>
+                        <button class="tab-btn" onclick="switchTab(event, 'config-tab')">Configuración</button>
+                    </div>
+
+                    <!-- USERS TAB -->
+                    <div id="users-tab" class="tab-content active">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                            <h3>Gestión de Usuarios</h3>
+                            <button class="btn btn-primary" onclick="openModal('newUserModal')">➕ Nuevo Usuario</button>
+                        </div>
+                        <div class="table-container">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Nombre</th>
+                                        <th>Email</th>
+                                        <th>Rol</th>
+                                        <th>Estado</th>
+                                        <th>Último Acceso</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="users-table-body">
+                                    <!-- Populated by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- ROLES TAB -->
+                    <div id="roles-tab" class="tab-content">
+                        <h3 style="margin-bottom: 20px;">Roles del Sistema</h3>
+                        <div style="display: grid; gap: 15px;">
+                            <div style="background: white; padding: 20px; border-radius: 8px; border-left: 4px solid var(--color-primary);">
+                                <h4>Administrador</h4>
+                                <p style="font-size: 13px; color: var(--color-info); margin-top: 5px;">Acceso total a todas las funciones</p>
+                            </div>
+                            <div style="background: white; padding: 20px; border-radius: 8px; border-left: 4px solid #28A745;">
+                                <h4>Médico</h4>
+                                <p style="font-size: 13px; color: var(--color-info); margin-top: 5px;">Triaje, atención, expedientes; sin acceso a admin</p>
+                            </div>
+                            <div style="background: white; padding: 20px; border-radius: 8px; border-left: 4px solid #FF8C00;">
+                                <h4>Enfermero</h4>
+                                <p style="font-size: 13px; color: var(--color-info); margin-top: 5px;">Captura signos vitales, triaje; sin edición de diagnósticos</p>
+                            </div>
+                            <div style="background: white; padding: 20px; border-radius: 8px; border-left: 4px solid #FFD700;">
+                                <h4>Recepcionista</h4>
+                                <p style="font-size: 13px; color: var(--color-info); margin-top: 5px;">Registro de pacientes, búsqueda; lectura de expedientes</p>
+                            </div>
+                            <div style="background: white; padding: 20px; border-radius: 8px; border-left: 4px solid #6C757D;">
+                                <h4>Triajista</h4>
+                                <p style="font-size: 13px; color: var(--color-info); margin-top: 5px;">Captura clínica y triaje asistido; sin atención médica</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CONFIG TAB -->
+                    <div id="config-tab" class="tab-content">
+                        <div style="background: white; padding: 30px; border-radius: 8px; box-shadow: var(--shadow);">
+                            <h3 style="margin-bottom: 20px;">Configuración del Sistema</h3>
+                            <div class="form-group">
+                                <label class="form-label">Nombre de la Institución</label>
+                                <input type="text" class="form-input" value="Hospital Privado San Lucas" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Zona Horaria</label>
+                                <input type="text" class="form-input" value="America/Bogota" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Emails Notificaciones</label>
+                                <input type="text" class="form-input" placeholder="admin@hospital.com, triaje@hospital.com" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <input type="checkbox" checked> Triaje asistido por IA habilitado
+                                </label>
+                            </div>
+                            <button class="btn btn-primary" style="margin-top: 20px;">💾 Guardar Cambios</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- MODALS -->
+    <!-- New Patient Modal -->
+    <div id="newPatientModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Registrar Nuevo Paciente</h2>
+                <button class="modal-close" onclick="closeModal('newPatientModal')">✕</button>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Cédula</label>
+                <input type="text" class="form-input" id="newPatient_cedula" placeholder="Ej: 1234567890">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Nombre Completo</label>
+                <input type="text" class="form-input" id="newPatient_name" placeholder="Ej: Juan Pérez García">
+            </div>
+            <div class="row">
+                <div class="form-group">
+                    <label class="form-label">Edad</label>
+                    <input type="number" class="form-input" id="newPatient_age" placeholder="35">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Sexo</label>
+                    <select class="form-select" id="newPatient_sex">
+                        <option>Masculino</option>
+                        <option>Femenino</option>
+                        <option>Otro</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Teléfono</label>
+                <input type="text" class="form-input" id="newPatient_phone" placeholder="Ej: 3001234567">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Alergias</label>
+                <input type="text" class="form-input" id="newPatient_allergies" placeholder="Ej: Penicilina, Ibuprofeno">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Medicamentos Actuales</label>
+                <input type="text" class="form-input" id="newPatient_medications" placeholder="Ej: Metformina 500mg">
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('newPatientModal')">Cancelar</button>
+                <button class="btn btn-primary" onclick="addNewPatient()">Registrar Paciente</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- New User Modal -->
+    <div id="newUserModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Crear Nuevo Usuario</h2>
+                <button class="modal-close" onclick="closeModal('newUserModal')">✕</button>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Nombre Completo</label>
+                <input type="text" class="form-input" placeholder="Ej: Dr. Carlos López">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Email</label>
+                <input type="email" class="form-input" placeholder="carlos.lopez@hospital.com">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Rol</label>
+                <select class="form-select">
+                    <option>Médico</option>
+                    <option>Enfermero</option>
+                    <option>Triajista</option>
+                    <option>Recepcionista</option>
+                    <option>Administrador</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Contraseña Temporal</label>
+                <input type="password" class="form-input" placeholder="••••••••">
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('newUserModal')">Cancelar</button>
+                <button class="btn btn-primary">Crear Usuario</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ========== SISTEMA DE ALMACENAMIENTO ==========
+        class HealthConnectDB {
+            constructor() {
+                this.initDB();
+            }
+
+            initDB() {
+                // Cargar datos de localStorage o crear datos iniciales
+                if (!localStorage.getItem('healthconnect_patients')) {
+                    const initialPatients = [
+                        { id: '1001', cedula: '1234567890', name: 'María García López', age: 45, sex: 'F', lastVisit: '2026-04-22', allergies: 'Penicilina', medications: 'Metformina 500mg' },
+                        { id: '1002', cedula: '1234567891', name: 'Carlos Ruiz Martín', age: 62, sex: 'M', lastVisit: '2026-04-21', allergies: 'Ninguna', medications: 'Atorvastatina' },
+                        { id: '1003', cedula: '1234567892', name: 'Ana Martín Pérez', age: 38, sex: 'F', lastVisit: '2026-04-20', allergies: 'Sulfonamidas', medications: 'Levotiroxina' },
+                        { id: '1004', cedula: '1234567893', name: 'Roberto Sánchez Gómez', age: 71, sex: 'M', lastVisit: '2026-04-19', allergies: 'AINE', medications: 'Bisoprolol, Amlodipino' },
+                        { id: '1005', cedula: '1234567894', name: 'Laura Fernández López', age: 28, sex: 'F', lastVisit: '2026-04-22', allergies: 'Ninguna', medications: 'Anticonceptivos' }
+                    ];
+                    localStorage.setItem('healthconnect_patients', JSON.stringify(initialPatients));
+                }
+
+                if (!localStorage.getItem('healthconnect_queue')) {
+                    localStorage.setItem('healthconnect_queue', JSON.stringify([]));
+                }
+
+                if (!localStorage.getItem('healthconnect_expedientes')) {
+                    localStorage.setItem('healthconnect_expedientes', JSON.stringify([]));
+                }
+
+                if (!localStorage.getItem('healthconnect_triajes')) {
+                    localStorage.setItem('healthconnect_triajes', JSON.stringify([]));
+                }
+            }
+
+            getPatients() {
+                return JSON.parse(localStorage.getItem('healthconnect_patients') || '[]');
+            }
+
+            addPatient(patient) {
+                const patients = this.getPatients();
+                patient.id = 'P' + Date.now();
+                patient.lastVisit = new Date().toISOString().split('T')[0];
+                patients.push(patient);
+                localStorage.setItem('healthconnect_patients', JSON.stringify(patients));
+                return patient;
+            }
+
+            updatePatient(id, updatedPatient) {
+                let patients = this.getPatients();
+                patients = patients.map(p => p.id === id ? { ...p, ...updatedPatient } : p);
+                localStorage.setItem('healthconnect_patients', JSON.stringify(patients));
+                return updatedPatient;
+            }
+
+            deletePatient(id) {
+                let patients = this.getPatients();
+                patients = patients.filter(p => p.id !== id);
+                localStorage.setItem('healthconnect_patients', JSON.stringify(patients));
+            }
+
+            getQueue() {
+                return JSON.parse(localStorage.getItem('healthconnect_queue') || '[]');
+            }
+
+            addToQueue(queueItem) {
+                const queue = this.getQueue();
+                queueItem.id = queue.length + 1;
+                queue.push(queueItem);
+                localStorage.setItem('healthconnect_queue', JSON.stringify(queue));
+                return queueItem;
+            }
+
+            removeFromQueue(id) {
+                let queue = this.getQueue();
+                queue = queue.filter(q => q.id !== id);
+                localStorage.setItem('healthconnect_queue', JSON.stringify(queue));
+            }
+
+            getExpedientes() {
+                return JSON.parse(localStorage.getItem('healthconnect_expedientes') || '[]');
+            }
+
+            addExpediente(exp) {
+                const expedientes = this.getExpedientes();
+                expedientes.push(exp);
+                localStorage.setItem('healthconnect_expedientes', JSON.stringify(expedientes));
+                return exp;
+            }
+
+            getTriajes() {
+                return JSON.parse(localStorage.getItem('healthconnect_triajes') || '[]');
+            }
+
+            addTriaje(triaje) {
+                const triajes = this.getTriajes();
+                triajes.push(triaje);
+                localStorage.setItem('healthconnect_triajes', JSON.stringify(triajes));
+                return triaje;
+            }
+
+            searchPatient(query) {
+                const patients = this.getPatients();
+                return patients.filter(p => 
+                    p.cedula.includes(query) || 
+                    p.name.toLowerCase().includes(query.toLowerCase())
+                );
+            }
+        }
+
+        // ========== INSTANCIAS GLOBALES ==========
+        const db = new HealthConnectDB();
+        let currentAIResult = null;
+        let currentQueue = 'all';
+        let currentEditPatientId = null;
+
+        // ========== PAGE NAVIGATION ==========
+        function showPage(pageName) {
+            document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+            document.getElementById(pageName + '-page').classList.add('active');
+            
+            document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
+            event.target.closest('.nav-link')?.classList.add('active');
+
+            // Populate data
+            if (pageName === 'patients') populatePatientsTable();
+            if (pageName === 'queue') populateQueue('all');
+            if (pageName === 'admin') populateUsersTable();
+            if (pageName === 'dashboard') populateDashboardQueue();
+        }
+
+        // ========== MODAL FUNCTIONS ==========
+        function openModal(modalId) {
+            document.getElementById(modalId).classList.add('active');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.classList.remove('active');
+            }
+        }
+
+        // ========== TAB FUNCTIONS ==========
+        function switchTab(event, tabName) {
+            if (event) {
+                document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+                event.target.classList.add('active');
+            }
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.getElementById(tabName).classList.add('active');
+        }
+
+        // ========== PATIENTS TABLE ==========
+        function populatePatientsTable() {
+            const tbody = document.getElementById('patients-table-body');
+            const patients = db.getPatients();
+            tbody.innerHTML = patients.map(p => `
+                <tr>
+                    <td>${p.cedula}</td>
+                    <td>${p.name}</td>
+                    <td>${p.age}</td>
+                    <td>${p.sex === 'M' ? 'Masculino' : 'Femenino'}</td>
+                    <td>${p.lastVisit}</td>
+                    <td style="display: flex; gap: 5px;">
+                        <button class="btn btn-sm btn-primary" onclick="editPatient('${p.id}')">Editar</button>
+                        <button class="btn btn-sm btn-secondary" onclick="deletePatient('${p.id}')">Borrar</button>
+                        <button class="btn btn-sm btn-primary" onclick="viewRecord('${p.id}')">Ver</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function registerNewPatient() {
+            const cedula = document.querySelector('[placeholder="Ej: 1234567890"]')?.parentElement?.querySelector('.form-input')?.value || prompt('Cédula:');
+            const name = document.querySelector('[placeholder="Ej: Juan Pérez García"]')?.parentElement?.querySelector('.form-input')?.value || prompt('Nombre completo:');
+            const age = parseInt(document.querySelector('[placeholder="35"]')?.parentElement?.querySelector('.form-input')?.value || prompt('Edad:'));
+            const sex = document.querySelector('select')?.value || 'M';
+            const phone = document.querySelector('[placeholder="Ej: 3001234567"]')?.parentElement?.querySelector('.form-input')?.value || '';
+
+            if (!cedula || !name) {
+                alert('Por favor completa cédula y nombre');
+                return;
+            }
+
+            const patient = {
+                cedula,
+                name,
+                age,
+                sex,
+                phone,
+                allergies: 'No especificadas',
+                medications: ''
+            };
+
+            db.addPatient(patient);
+            alert(`✓ Paciente ${name} registrado exitosamente`);
+            closeModal('newPatientModal');
+            populatePatientsTable();
+            updateDashboard();
+        }
+
+        function editPatient(patientId) {
+            const patients = db.getPatients();
+            const patient = patients.find(p => p.id === patientId);
+            
+            if (!patient) return;
+
+            currentEditPatientId = patientId;
+            const newName = prompt(`Editar nombre (actual: ${patient.name}):`, patient.name);
+            const newAge = prompt(`Editar edad (actual: ${patient.age}):`, patient.age);
+
+            if (newName && newAge) {
+                db.updatePatient(patientId, { name: newName, age: parseInt(newAge) });
+                alert(`✓ Paciente actualizado`);
+                populatePatientsTable();
+                updateDashboard();
+            }
+        }
+
+        function deletePatient(patientId) {
+            const patients = db.getPatients();
+            const patient = patients.find(p => p.id === patientId);
+            
+            if (!patient) return;
+
+            if (confirm(`¿Estás seguro que deseas eliminar a ${patient.name}?`)) {
+                db.deletePatient(patientId);
+                // También eliminar de la cola
+                db.removeFromQueue(patientId);
+                alert(`✓ Paciente ${patient.name} eliminado`);
+                populatePatientsTable();
+                updateDashboard();
+            }
+        }
+
+        function analyzeWithAI() {
+            const sbp = document.getElementById('sbp').value;
+            const hr = document.getElementById('hr').value;
+            const rr = document.getElementById('rr').value;
+            const spo2 = document.getElementById('spo2').value;
+            const temp = document.getElementById('temp').value;
+            const symptoms = document.getElementById('symptoms').value;
+            const patientSearch = document.getElementById('patientSearch').value;
+
+            if (!sbp || !hr || !rr || !spo2 || !temp || !symptoms) {
+                alert('Por favor completa todos los campos de signos vitales');
+                return;
+            }
+
+            if (!patientSearch) {
+                alert('Por favor selecciona o busca un paciente');
+                return;
+            }
+
+            // Buscar paciente
+            let patient = db.searchPatient(patientSearch)[0];
+            if (!patient) {
+                alert('Paciente no encontrado');
+                return;
+            }
+
+            // Análisis de IA
+            let priority = 'blue';
+            let criteria = [];
+            let recommendations = [];
+
+            const hrNum = parseInt(hr);
+            const spo2Num = parseInt(spo2);
+            const tempNum = parseFloat(temp);
+            const sbpNum = parseInt(sbp.split('/')[0]);
+
+            // Evaluación de criterios
+            if (spo2Num < 90 || hrNum > 120 || sbpNum > 180 || tempNum > 39) {
+                priority = 'red';
+                criteria.push('• Signos vitales críticos detectados');
+                recommendations = ['URGENCIA INMEDIATA: Requiere evaluación médica urgente', 'Monitoreo continuo de signos vitales'];
+            } else if (hrNum > 100 || spo2Num < 95 || tempNum > 38.5 || sbpNum > 160) {
+                priority = 'orange';
+                criteria.push('• Signos vitales elevados');
+                recommendations = ['MUY URGENTE: Evaluación médica en < 10 min'];
+            } else if (hrNum > 90 || spo2Num < 97 || tempNum > 38 || sbpNum > 140) {
+                priority = 'yellow';
+                criteria.push('• Signos vitales moderadamente alterados');
+                recommendations = ['URGENTE: Evaluación médica en < 30 min'];
+            } else if (symptoms.toLowerCase().includes('leve')) {
+                priority = 'green';
+                criteria.push('• Síntomas leves reportados');
+                recommendations = ['Paciente puede esperar 1-2 horas'];
+            } else {
+                priority = 'blue';
+                criteria.push('• Signos vitales estables');
+                recommendations = ['Atención rutinaria'];
+            }
+
+            currentAIResult = {
+                priority,
+                patient,
+                sbp, hr, rr, spo2, temp, symptoms,
+                criteria,
+                recommendations
+            };
+
+            // Mostrar resultado
+            const priorityMap = { red: 'INMEDIATO 🔴', orange: 'MUY URGENTE 🟠', yellow: 'URGENTE 🟡', green: 'POCO URGENTE 🟢', blue: 'NO URGENTE 🔵' };
+            const priorityBoxMap = {
+                red: '<div class="priority-box red"><div class="priority-label">Prioridad Sugerida</div><div class="priority-value">INMEDIATO</div></div>',
+                orange: '<div class="priority-box orange"><div class="priority-label">Prioridad Sugerida</div><div class="priority-value">MUY URGENTE</div></div>',
+                yellow: '<div class="priority-box yellow"><div class="priority-label">Prioridad Sugerida</div><div class="priority-value">URGENTE</div></div>',
+                green: '<div class="priority-box green"><div class="priority-label">Prioridad Sugerida</div><div class="priority-value">POCO URGENTE</div></div>',
+                blue: '<div class="priority-box blue"><div class="priority-label">Prioridad Sugerida</div><div class="priority-value">NO URGENTE</div></div>'
+            };
+
+            document.getElementById('ai-priority-box').innerHTML = priorityBoxMap[priority];
+            document.getElementById('ai-criteria').innerHTML = criteria.map(c => `<li>${c}</li>`).join('');
+            document.getElementById('ai-recommendations').innerHTML = recommendations.map(r => `<div>✓ ${r}</div>`).join('');
+            
+            document.getElementById('ai-result').style.display = 'block';
+            document.getElementById('ai-empty').style.display = 'none';
+            
+            document.getElementById('validation-suggested').textContent = priorityMap[priority];
+            document.getElementById('triageSelect').value = priority;
+
+            switchTab(null, 'tab-ai-suggestion');
+        }
+
+        function submitTriage() {
+            const priority = document.getElementById('triageSelect').value;
+            const justification = document.getElementById('triageJustification').value;
+
+            if (!priority || !justification) {
+                alert('Complete la prioridad y justificación');
+                return;
+            }
+
+            if (!currentAIResult || !currentAIResult.patient) {
+                alert('No hay análisis de IA disponible');
+                return;
+            }
+
+            const triaje = {
+                patientId: currentAIResult.patient.id,
+                patientName: currentAIResult.patient.name,
+                priority,
+                timestamp: new Date().toISOString(),
+                justification
+            };
+
+            // Guardar triaje
+            db.addTriaje(triaje);
+
+            // Agregar a cola
+            const queueItem = {
+                cedula: currentAIResult.patient.cedula,
+                name: currentAIResult.patient.name,
+                priority,
+                patientId: currentAIResult.patient.id,
+                time: new Date().toLocaleTimeString('es-CO'),
+                waiting: '0 min'
+            };
+            db.addToQueue(queueItem);
+
+            alert(`✓ Triaje registrado: ${priority.toUpperCase()}`);
+            
+            // Limpiar
+            document.querySelectorAll('.form-input, .form-textarea').forEach(el => el.value = '');
+            currentAIResult = null;
+            document.getElementById('ai-result').style.display = 'none';
+            document.getElementById('ai-empty').style.display = 'block';
+            
+            updateDashboard();
+            switchTab(null, 'tab-capture');
+        }
+
+        // ========== QUEUE ==========
+        // ========== QUEUE ==========
+        function populateDashboardQueue() {
+            const container = document.getElementById('queue-preview');
+            const queue = db.getQueue();
+            
+            if (queue.length === 0) {
+                container.innerHTML = '<p style="text-align: center; padding: 20px; color: #999;">No hay pacientes en cola</p>';
+                return;
+            }
+
+            container.innerHTML = `
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Prioridad</th>
+                            <th>Paciente</th>
+                            <th>Tiempo Espera</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${queue.slice(0, 5).map(q => {
+                            const priorityMap = { red: '🔴', orange: '🟠', yellow: '🟡', green: '🟢', blue: '🔵' };
+                            return `
+                                <tr>
+                                    <td><span class="badge badge-${q.priority}">${priorityMap[q.priority]} ${q.priority.toUpperCase()}</span></td>
+                                    <td>${q.name}</td>
+                                    <td>${q.waiting}</td>
+                                    <td><span style="background: var(--color-light); padding: 4px 8px; border-radius: 4px; font-size: 12px;">Esperando</span></td>
+                                </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        function populateQueue(filter) {
+            currentQueue = filter;
+            const container = document.getElementById('queue-list');
+            let queue = db.getQueue();
+            
+            if (filter !== 'all') {
+                queue = queue.filter(q => q.priority === filter);
+            }
+
+            if (queue.length === 0) {
+                container.innerHTML = '<p style="text-align: center; padding: 40px; color: #999;">No hay pacientes en esta prioridad</p>';
+                return;
+            }
+
+            container.innerHTML = queue.map(q => {
+                const priorityMap = { red: '🔴 INMEDIATO', orange: '🟠 MUY URGENTE', yellow: '🟡 URGENTE', green: '🟢 POCO URGENTE', blue: '🔵 NO URGENTE' };
+                return `
+                    <div class="queue-item ${q.priority}">
+                        <div class="queue-patient">
+                            <div class="queue-patient-name">${q.name}</div>
+                            <div class="queue-patient-info">Cédula: ${q.cedula} | Ingreso: ${q.time}</div>
+                        </div>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <div style="text-align: right;">
+                                <div style="font-weight: 600; color: var(--color-dark);">${priorityMap[q.priority]}</div>
+                                <div class="queue-time">Esperando: ${q.waiting}</div>
+                            </div>
+                            <button class="btn btn-sm btn-secondary" onclick="removeQueueItem(${q.id})">Completar</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function filterQueue(priority) {
+            populateQueue(priority);
+            document.querySelectorAll('[onclick*="filterQueue"]').forEach(btn => btn.classList.remove('btn-primary'));
+            event.target.classList.add('btn-primary');
+        }
+
+        function removeQueueItem(queueId) {
+            db.removeFromQueue(queueId);
+            populateQueue(currentQueue);
+            updateDashboard();
+        }
+
+        // ========== DASHBOARD UPDATE ==========
+        function updateDashboard() {
+            const queue = db.getQueue();
+            const patients = db.getPatients();
+            
+            // Contar triajes por prioridad
+            const redCount = queue.filter(q => q.priority === 'red').length;
+            const orangeCount = queue.filter(q => q.priority === 'orange').length;
+            const yellowCount = queue.filter(q => q.priority === 'yellow').length;
+            const greenCount = queue.filter(q => q.priority === 'green').length;
+            const blueCount = queue.filter(q => q.priority === 'blue').length;
+            const totalInQueue = queue.length;
+
+            // Actualizar métricas
+            const metrics = document.querySelectorAll('.metric-value');
+            if (metrics[0]) metrics[0].textContent = totalInQueue;
+            if (metrics[1]) metrics[1].textContent = redCount;
+            if (metrics[2]) metrics[2].textContent = orangeCount;
+            
+            populateDashboardQueue();
+        }
+
+        // ========== RECORDS ==========
+        function viewRecord(patientId) {
+            const patient = db.getPatients().find(p => p.id === patientId);
+            if (!patient) return;
+
+            document.getElementById('record-patient-name').textContent = patient.name;
+            document.getElementById('record-id').textContent = patient.cedula;
+            document.getElementById('record-age').textContent = patient.age;
+            document.getElementById('record-sex').textContent = patient.sex === 'M' ? 'Masculino' : 'Femenino';
+            document.getElementById('record-allergies').textContent = patient.allergies || 'No especificadas';
+            document.getElementById('record-meds').textContent = patient.medications || 'Ninguno';
+            
+            // Buscar triaje más reciente del paciente
+            const triajes = db.getTriajes().filter(t => t.patientId === patientId);
+            if (triajes.length > 0) {
+                const lastTriaje = triajes[triajes.length - 1];
+                document.getElementById('record-sbp').textContent = '120/80';
+                document.getElementById('record-hr').textContent = '72';
+                document.getElementById('record-rr').textContent = '16';
+                document.getElementById('record-spo2').textContent = '98';
+                document.getElementById('record-temp').textContent = '36.5';
+                document.getElementById('record-priority').innerHTML = `<span class="badge badge-${lastTriaje.priority}">${lastTriaje.priority.toUpperCase()}</span>`;
+                document.getElementById('record-justification').textContent = lastTriaje.justification;
+            }
+
+            document.getElementById('record-events').innerHTML = `
+                <div class="timeline-item">
+                    <div class="timeline-time">${new Date().toLocaleTimeString('es-CO')}</div>
+                    <div class="timeline-content"><strong>Registro consultado:</strong> Paciente ingresa a urgencias</div>
+                </div>
+            `;
+
+            document.getElementById('record-detail').style.display = 'block';
+            document.getElementById('record-empty').style.display = 'none';
+        }
+
+        function closeRecord() {
+            document.getElementById('record-detail').style.display = 'none';
+            document.getElementById('record-empty').style.display = 'block';
+        }
+
+        // ========== USERS TABLE ==========
+        function populateUsersTable() {
+            const tbody = document.getElementById('users-table-body');
+            const mockUsers = [
+                { id: 1, name: 'Dr. Juan Díaz', email: 'juan.diaz@hospital.com', role: 'Médico', status: 'Activo', lastAccess: '22 abr 14:30' },
+                { id: 2, name: 'Dra. María Santos', email: 'maria.santos@hospital.com', role: 'Médico', status: 'Activo', lastAccess: '22 abr 13:15' },
+                { id: 3, name: 'Enf. Pablo Morales', email: 'pablo.morales@hospital.com', role: 'Enfermero', status: 'Activo', lastAccess: '22 abr 14:45' },
+                { id: 4, name: 'Recep. Carmen Ruiz', email: 'carmen.ruiz@hospital.com', role: 'Recepcionista', status: 'Activo', lastAccess: '22 abr 14:50' },
+                { id: 5, name: 'Adm. Fernando López', email: 'fernando.lopez@hospital.com', role: 'Administrador', status: 'Inactivo', lastAccess: '21 abr 16:20' }
+            ];
+            
+            tbody.innerHTML = mockUsers.map(u => `
+                <tr>
+                    <td>${u.name}</td>
+                    <td>${u.email}</td>
+                    <td><span class="badge badge-blue">${u.role}</span></td>
+                    <td><span style="color: #28A745; font-weight: 600;">${u.status}</span></td>
+                    <td>${u.lastAccess}</td>
+                    <td>
+                        <button class="btn btn-sm btn-secondary">Editar</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // ========== LOGOUT ==========
+        function logout() {
+            if (confirm('¿Cerrar sesión?')) {
+                alert('Sesión cerrada. Redirigiendo a login...');
+                // Redirect to login would happen here
+            }
+        }
+
+        // ========== INIT ==========
+        document.addEventListener('DOMContentLoaded', function() {
+            db.initDB();
+            populateDashboardQueue();
+            updateDashboard();
+        });
+
+        function addNewPatient() {
+            const cedula = document.getElementById('newPatient_cedula').value;
+            const name = document.getElementById('newPatient_name').value;
+            const age = parseInt(document.getElementById('newPatient_age').value);
+            const sexSelect = document.getElementById('newPatient_sex').value;
+            const sex = sexSelect === 'Masculino' ? 'M' : (sexSelect === 'Femenino' ? 'F' : 'O');
+            const phone = document.getElementById('newPatient_phone').value;
+            const allergies = document.getElementById('newPatient_allergies').value || 'No especificadas';
+            const medications = document.getElementById('newPatient_medications').value;
+
+            if (!cedula || !name || !age) {
+                alert('Por favor completa cédula, nombre y edad');
+                return;
+            }
+
+            // Verificar que la cédula no exista
+            const existingPatient = db.getPatients().find(p => p.cedula === cedula);
+            if (existingPatient) {
+                alert('Este paciente ya está registrado');
+                return;
+            }
+
+            const patient = {
+                cedula,
+                name,
+                age,
+                sex,
+                phone,
+                allergies,
+                medications
+            };
+
+            db.addPatient(patient);
+            
+            // Limpiar formulario
+            document.getElementById('newPatient_cedula').value = '';
+            document.getElementById('newPatient_name').value = '';
+            document.getElementById('newPatient_age').value = '';
+            document.getElementById('newPatient_phone').value = '';
+            document.getElementById('newPatient_allergies').value = '';
+            document.getElementById('newPatient_medications').value = '';
+
+            alert(`✓ Paciente ${name} registrado exitosamente`);
+            closeModal('newPatientModal');
+            populatePatientsTable();
+            updateDashboard();
+        }
+    </script>
+</body>
+</html>
